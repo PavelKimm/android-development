@@ -1,55 +1,78 @@
 package ru.tpu.courses.lab4;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import ru.tpu.courses.lab4.adapter.StudentsAdapter;
+import ru.tpu.courses.lab4.add.AddStudentActivity;
+import ru.tpu.courses.lab4.db.Lab4Database;
+import ru.tpu.courses.lab4.db.Student;
+import ru.tpu.courses.lab4.db.StudentDao;
 
 public class Lab4Activity extends AppCompatActivity {
+
+    private static final int REQUEST_STUDENT_ADD = 1;
+
+    public static Intent newIntent(@NonNull Context context) {
+        return new Intent(context, Lab4Activity.class);
+    }
+
+    private StudentDao studentDao;
+
+    private RecyclerView list;
+    private FloatingActionButton fab;
+
+    private StudentsAdapter studentsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_lab4);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        /*
+        Получаем объект для выполнения запросов к БД. См. Lab4Database.
+         */
+        studentDao = Lab4Database.getInstance(this).studentDao();
+
+        setTitle(getString(R.string.lab4_title, getClass().getSimpleName()));
+
+        setContentView(R.layout.lab4_activity);
+        list = findViewById(android.R.id.list);
+        fab = findViewById(R.id.fab);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        list.setLayoutManager(layoutManager);
+
+        // Точно такой же список, как и в lab3, но с добавленным выводом фото
+        list.setAdapter(studentsAdapter = new StudentsAdapter());
+        studentsAdapter.setStudents(studentDao.getAll());
+
+        fab.setOnClickListener(
+                v -> startActivityForResult(
+                        AddStudentActivity.newIntent(this),
+                        REQUEST_STUDENT_ADD
+                )
+        );
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_lab4, menu);
-        return true;
-    }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_STUDENT_ADD && resultCode == RESULT_OK) {
+            Student student = AddStudentActivity.getResultStudent(data);
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+            studentDao.insert(student);
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+            studentsAdapter.setStudents(studentDao.getAll());
+            studentsAdapter.notifyItemRangeInserted(studentsAdapter.getItemCount() - 2, 2);
+            list.scrollToPosition(studentsAdapter.getItemCount() - 1);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 }
