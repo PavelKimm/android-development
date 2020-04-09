@@ -12,6 +12,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+
 /**
  * <b>Вёрстка UI. Сохранение состояния.</b>
  * <p/>
@@ -40,6 +42,8 @@ public class Lab2Activity extends AppCompatActivity {
         return new Intent(context, Lab2Activity.class);
     }
 
+    private static final String STATE_RECORDS = "records";
+
     private Lab2ViewsContainer lab2ViewsContainer;
 
     @Override
@@ -55,10 +59,6 @@ public class Lab2Activity extends AppCompatActivity {
         // отличную от View в XML, то приложение крашнется на вызове этого метода.
         lab2ViewsContainer = findViewById(R.id.container);
 
-        EditText titleEditText = findViewById(R.id.titleEditText);
-        String title = titleEditText.getText().toString();
-
-//        findViewById(R.id.addElementBtn).setOnClickListener(view -> lab2ViewsContainer.incrementViews(title));
 
         Button addElementBtn = findViewById(R.id.addElementBtn);
         addElementBtn.setOnClickListener(new View.OnClickListener() {
@@ -74,14 +74,16 @@ public class Lab2Activity extends AppCompatActivity {
             }
         });
         // Восстанавливаем состояние нашего View, добавляя заново все View
-//        if (savedInstanceState != null) {
-//            lab2ViewsContainer.setViewsCount(savedInstanceState.getInt(STATE_VIEWS_COUNT));
-//        }
+        if (savedInstanceState != null) {
+            ArrayList<Record> records = savedInstanceState.getParcelableArrayList(STATE_RECORDS);
+            lab2ViewsContainer.setRecords(records);
+        }
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putParcelableArrayList(STATE_RECORDS, lab2ViewsContainer.getRecords());
+
         super.onSaveInstanceState(outState);
-//        outState.putInt(STATE_VIEWS_COUNT, lab2ViewsContainer.getViewsCount());
     }
 }

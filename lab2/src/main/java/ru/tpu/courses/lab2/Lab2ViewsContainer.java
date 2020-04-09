@@ -27,7 +27,6 @@ import java.util.Collections;
  */
 public class Lab2ViewsContainer extends LinearLayout {
 
-    private int minViewsCount;
     private int viewsCount;
     private ArrayList<Record> records = new ArrayList<>();
 
@@ -58,36 +57,14 @@ public class Lab2ViewsContainer extends LinearLayout {
         // Эта строчка объединяет возможные применённые к View стили
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Lab2ViewsContainer, defStyleAttr, 0);
 
-        minViewsCount = a.getInt(R.styleable.Lab2ViewsContainer_lab2_minViewsCount, 0);
+        int minViewsCount = a.getInt(R.styleable.Lab2ViewsContainer_lab2_minViewsCount, 0);
         if (minViewsCount < 0) {
             throw new IllegalArgumentException("minViewsCount can't be less than 0");
         }
 
         // Полученный TypedArray необходимо обязательно очистить.
         a.recycle();
-
-        setViewsCount(minViewsCount);
     }
-
-    /**
-     * Программно создаём {@link TextView} и задаём его атрибуты, альтернативно можно описать его в
-     * xml файле и инфлейтить его через класс LayoutInflater.
-     */
-//    public void incrementViews(String title, Float rating) {
-//        TextView textView = new TextView(getContext());
-//        textView.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
-//        textView.setTextSize(16);
-//        textView.setText(title);
-//
-//        // У каждого View, который находится внутри ViewGroup есть LayoutParams,
-//        // в них содержится информация для лэйаута компонентов.
-//        // Базовая реализация LayoutParams содержит только определение ширины и высоты
-//        // (то, что мы указываем в xml в атрибутах layout_widget и layout_height).
-//        // Получить их можно через метод getLayoutParams у View. Метод addView смотрит, если у View
-//        // не установлены LayoutParams, то создаёт дефолтные, вызывая метод generateDefaultLayoutParams
-//        addView(textView);
-//    }
-
 
     public void incrementViews(String title, Float rate) {
         if ((title == null) || (rate == null)) {
@@ -140,21 +117,16 @@ public class Lab2ViewsContainer extends LinearLayout {
         addView(layout);
     }
 
-    public void setViewsCount(int viewsCount) {
-        if (this.viewsCount == viewsCount) {
-            return;
-        }
-//        viewsCount = viewsCount < minViewsCount ? minViewsCount : viewsCount;
+    public void setRecords(ArrayList<Record> records) {
+        this.records = records;
 
-        removeAllViews();
-        this.viewsCount = 0;
-//        for (int i = 0; i < viewsCount; i++) {
-//            incrementViews();
-//        }
+        for (Record record:records) {
+            createView(record.getId(), record.getTitle(), record.getRate());
+        }
     }
 
-    public int getViewsCount() {
-        return viewsCount;
+    public ArrayList<Record> getRecords() {
+        return records;
     }
 
     /**
