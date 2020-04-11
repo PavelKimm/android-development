@@ -9,13 +9,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import ru.tpu.courses.lab3.adapter.StudentsAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import ru.tpu.courses.lab3.adapter.StudentsAdapter;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Lab3Activity extends AppCompatActivity {
-
-    private static final int REQUEST_STUDENT_ADD = 1;
 
     public static Intent newIntent(@NonNull Context context) {
         return new Intent(context, Lab3Activity.class);
@@ -24,19 +25,24 @@ public class Lab3Activity extends AppCompatActivity {
     private final StudentsCache studentsCache = StudentsCache.getInstance();
 
     private RecyclerView list;
-    private FloatingActionButton fab;
+    private AddGroupDialog addGroupDialog;
+
+    private static final int REQUEST_STUDENT_ADD = 1;
+
 
     private StudentsAdapter studentsAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setTitle(getString(R.string.lab3_title, getClass().getSimpleName()));
-
         setContentView(R.layout.lab3_activity);
+        setTitle(getString(R.string.lab3_title, getClass().getSimpleName()));
         list = findViewById(android.R.id.list);
-        fab = findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
+        FloatingActionButton fabGroup = findViewById(R.id.fabGroup);
+        addGroupDialog = new AddGroupDialog(this);
+
 
         /*
         Здесь идёт инициализация RecyclerView. Первое, что необходимо для его работы, это установить
@@ -49,14 +55,12 @@ public class Lab3Activity extends AppCompatActivity {
          */
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         list.setLayoutManager(layoutManager);
-
+        list.setAdapter(studentsAdapter = new StudentsAdapter());
         /*
         Следующий ключевой компонент - это RecyclerView.Adapter. В нём описывается вся информация,
         необходимая для заполнения RecyclerView. В примере мы выводим пронумерованный список
         студентов, подробнее о работе адаптера в документации к классу StudentsAdapter.
          */
-        list.setAdapter(studentsAdapter = new StudentsAdapter());
-        studentsAdapter.setStudents(studentsCache.getStudents());
 
         /*
         При нажатии на кнопку мы переходим на Activity для добавления студента. Обратите внимание,
@@ -71,6 +75,14 @@ public class Lab3Activity extends AppCompatActivity {
                         REQUEST_STUDENT_ADD
                 )
         );
+        fabGroup.setOnClickListener(v -> addGroupDialog.show());
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+            addGroupDialog.dismiss();
     }
 
     @Override
@@ -81,8 +93,38 @@ public class Lab3Activity extends AppCompatActivity {
 
             studentsCache.addStudent(student);
 
-            studentsAdapter.setStudents(studentsCache.getStudents());
-            studentsAdapter.notifyItemRangeInserted(studentsAdapter.getItemCount() - 2, 2);
+            boolean isFound;
+            List<Student> unsortedStudents = studentsCache.getStudents();
+            List<ListItem> sortedStudents = new ArrayList<>();
+            for (int j = 0; j < unsortedStudents.size(); j++) {
+                isFound = false;
+                Student currStudent = unsortedStudents.get(j);
+                for (int i = 0; i < sortedStudents.size(); i++) {
+                    if (sortedStudents.get(i).getType() == 0) continue;
+                    Student st = (Student) sortedStudents.get(i);
+                    String currStudentGroup = st.groupName;
+                    if (currStudentGroup.equals(currStudent.groupName)) {
+                        sortedStudents.add(i, currStudent);
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (!isFound) {
+                    Group group = new Group(currStudent.groupName);
+                    sortedStudents.add(group);
+                    sortedStudents.add(currStudent);
+                }
+            }
+
+            studentsAdapter.setStudents(sortedStudents);
+            int insertionIndx = sortedStudents.indexOf(student);
+            int insertionCount = 1;
+            if (insertionIndx == sortedStudents.size() - 1)
+            {
+                insertionCount++;
+                insertionIndx--;
+            }
+            studentsAdapter.notifyItemRangeInserted(insertionIndx, insertionCount);
             list.scrollToPosition(studentsAdapter.getItemCount() - 1);
         }
     }

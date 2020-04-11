@@ -1,4 +1,4 @@
-package ru.tpu.courses.lab3;
+package ru.tpu.courses.lab4;
 
 import android.content.Context;
 import android.content.Intent;
@@ -16,13 +16,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Objects;
 
-/**
- * Activity с полями для заполнения ФИО студента.
- */
+import ru.tpu.courses.lab4.db.GroupDao;
+import ru.tpu.courses.lab4.db.Lab4Database;
+import ru.tpu.courses.lab4.db.StudentDao;
+
 public class AddStudentActivity extends AppCompatActivity {
 
     private static final String EXTRA_STUDENT = "student";
-
 
     public static Intent newIntent(@NonNull Context context) {
 
@@ -33,28 +33,16 @@ public class AddStudentActivity extends AppCompatActivity {
         return intent.getParcelableExtra(EXTRA_STUDENT);
     }
 
-    private final StudentsCache studentsCache = StudentsCache.getInstance();
-    private final GroupCache groupCache = GroupCache.getInstance();
-
-    private EditText firstName;
-    private EditText secondName;
-    private EditText lastName;
-    private Spinner group;
+    private StudentDao studentDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.lab3_activity_add_student);
-
-
-        /*
-        Метод getSupportActionBar() возвращает ActionBar (полоска сверху с элементами навигации и
-        заголовком). Метод setDisplayHomeAsUpEnabled позволяет добавить кнопку назад к ActionBar-у.
-        Когда необходимо сильно закастомизировать ActionBar, можно воспользоваться Toolbar-ом, либо
-        вообще реализовать View самому. Классы ActionBar и Toolbar позволяют реализовать большинство
-        стандартных поведений соответственно design guidelines от Google.
-         */
+        setContentView(R.layout.lab4_add_student_activity);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        studentDao = Lab4Database.getInstance(this).studentDao();
+        GroupDao groupDao = Lab4Database.getInstance(this).groupDao();
+
 
         firstName = findViewById(R.id.first_name);
         secondName = findViewById(R.id.second_name);
@@ -63,35 +51,39 @@ public class AddStudentActivity extends AppCompatActivity {
 
 
         ArrayAdapter<Group> adapter = new ArrayAdapter<Group>(this,
-                android.R.layout.simple_spinner_item, groupCache.getGroups());
+                android.R.layout.simple_spinner_item, groupDao.getAll());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         group.setAdapter(adapter);
+
+
         Bundle arguments = getIntent().getExtras();
-        Student student = null;
+        StudentGroup student = null;
+
         if (arguments != null)
-            student = (Student) arguments.get("Student");
+            student = (StudentGroup) arguments.get("Student");
+
         if (student != null) {
-            firstName.setText(student.firstName);
-            secondName.setText(student.secondName);
-            lastName.setText(student.lastName);
-            Group g = groupCache.getGroupByName(student.groupName);
+            String[] name = student.studentName.split(" ");
+            firstName.setText(name[0]);
+            secondName.setText(name[1]);
+            lastName.setText(name[2]);
+            Group g = new Group(student.groupName);
             group.setSelection(adapter.getPosition(g));
         }
     }
 
-    /**
-     * Переопределив этот метод мы можем добавить действия в меню ActionBar-а. Это иконки справа.
-     * Задаются они обычно через XML в ресурсах типа menu и инфлейтятся по аналогии с View.
-     */
+
+    private EditText firstName;
+    private EditText secondName;
+    private EditText lastName;
+    private Spinner group;
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.lab3_add_student, menu);
+        getMenuInflater().inflate(R.menu.lab4_add_student, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
-    /**
-     * Этот метод вызывается когда пользователь нажимает на любую из созданных ранее меню.
-     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Если пользователь нажал "назад", то просто закрываем Activity
@@ -100,13 +92,14 @@ public class AddStudentActivity extends AppCompatActivity {
             return true;
         }
         // Если пользователь нажал "Сохранить"
+        Group selectedGroup = (Group) group.getSelectedItem();
         if (item.getItemId() == R.id.action_save) {
             // Создаём объект студента из введенных
             Student student = new Student(
                     firstName.getText().toString(),
                     secondName.getText().toString(),
                     lastName.getText().toString(),
-                    group.getSelectedItem().toString()
+                    selectedGroup.getId()
             );
 
             // Проверяем, что все поля были указаны
@@ -114,14 +107,15 @@ public class AddStudentActivity extends AppCompatActivity {
                     TextUtils.isEmpty(student.secondName) ||
                     TextUtils.isEmpty(student.lastName)) {
                 // Класс Toast позволяет показать системное уведомление поверх всего UI
-                Toast.makeText(this, R.string.lab3_error_empty_fields, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.lab4_error_empty_fields, Toast.LENGTH_LONG).show();
                 return true;
             }
             // Проверяем, что точно такого же студента в списке нет
-            if (studentsCache.contains(student)) {
-                Toast.makeText(this, R.string.lab3_error_already_exists, Toast.LENGTH_LONG).show();
+            if (studentDao.count(student.firstName, student.secondName, student.lastName, student.groupId) > 0) {
+                Toast.makeText(this, R.string.lab4_error_already_exists, Toast.LENGTH_LONG).show();
                 return true;
             }
+
             // Сохраняем Intent с инфорамцией от этой Activity, который будет передан в onActivityResult
             // вызвавшей его Activity.
             Intent data = new Intent();

@@ -1,13 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="lab4_title">Я %s!</string>
-
-    <string name="lab4_first_name">Имя</string>
-    <string name="lab4_second_name">Отчество</string>
-    <string name="lab4_last_name">Фамилия</string>
-
-    <string name="lab4_action_add_photo">Добавить фото</string>
+    <string name="lab4_app_name">Лаба 4</string>
     <string name="lab4_action_save">Сохранить</string>
-
-    <string name="lab4_error_empty_fields">Все поля должны быть заполнены</string>
-    <string name="lab4_error_already_exists">Такой студент уже существует</string>
+    <string name="lab4_dialog_title">Добавить новую группу</string>
+    <string name="lab4_error_already_exists">Студент с таким именем уже есть в БД</string>
+    <string name="lab4_error_empty_fields">Заполните все поля</string>
+    <string name="lab4_first_name">Имя</string>
+    <string name="lab4_group_name">Название группы</string>
+    <string name="lab4_last_name">Отчество</string>
+    <string name="lab4_second_name">Фамилия</string>
+    <string name="lab4_title">Я %s!</string>
+    <string name="lab4_add_group_btn">Добавить</string>
 </resources>

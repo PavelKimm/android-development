@@ -42,4 +42,9 @@
 			/>
 	</com.google.android.material.textfield.TextInputLayout>
 
+	<Spinner
+		android:id="@+id/SpinnerGroups"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content" />
+
 </LinearLayout>
